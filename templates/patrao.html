@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Patrão</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .diferenca {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .positivo {
+            color: green;
+        }
+        .negativo {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Controle Financeiro</h1>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Selecionar Data</h2>
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('funcionario') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Página do Funcionário
+                    </a>
+                    <!-- Botão direito vazio para manter o espaço -->
+                    <div></div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="data" class="form-label">Data:</label>
+                        <select id="data" class="form-select">
+                            {% for data in datas %}
+                                <option value="{{ data }}">{{ data }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button id="btnCarregar" class="btn btn-primary">Carregar Dados</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Dados do Dia</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="gaveta_inicio" class="form-label">Gaveta Início (R$):</label>
+                            <input type="text" class="form-control" id="gaveta_inicio" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gaveta_fim" class="form-label">Gaveta Fim (R$):</label>
+                            <input type="text" class="form-control" id="gaveta_fim" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor_entrada" class="form-label">Valor Entrada (R$):</label>
+                            <input type="text" class="form-control" id="valor_entrada" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cartao" class="form-label">Cartão (R$):</label>
+                            <input type="text" class="form-control" id="cartao" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="retirada" class="form-label">Retirada (R$):</label>
+                            <input type="text" class="form-control" id="retirada" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="vale" class="form-label">Vale (R$):</label>
+                            <input type="text" class="form-control" id="vale" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="entrada_produtos" class="form-label">Entrada de Produtos (R$):</label>
+                            <input type="text" class="form-control" id="entrada_produtos" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pagamentos_gerais" class="form-label">Pagamentos Gerais (R$):</label>
+                            <input type="text" class="form-control" id="pagamentos_gerais" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Dados do Patrão</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="maquinas" class="form-label">Máquinas (R$):</label>
+                            <input type="text" class="form-control" id="maquinas">
+                        </div>
+                        <div class="mb-3">
+                            <label for="produtos" class="form-label">Produtos (R$):</label>
+                            <input type="text" class="form-control" id="produtos">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Resultados</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label>Total do Dia:</label>
+                            <div class="form-control" id="total_json">R$ 0,00</div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Total do Patrão:</label>
+                            <div class="form-control" id="total_patron">R$ 0,00</div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Diferença:</label>
+                            <div class="form-control diferenca" id="diferenca">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Carrega dados ao clicar no botão
+            $('#btnCarregar').click(carregarDados);
+            
+            // Atualiza cálculos ao digitar nos campos do patrão
+            $('#maquinas, #produtos').on('input', calcularDiferenca);
+            
+            // Formata entrada com vírgula
+            $('#maquinas, #produtos').on('blur', function() {
+                let value = $(this).val();
+                if (value && !isNaN(parseFloat(value.replace(',', '.')))) {
+                    $(this).val(parseFloat(value.replace(',', '.')).toFixed(2).replace('.', ','));
+                }
+            });
+        });
+
+        function formatarMoeda(valor) {
+            return valor.toFixed(2).replace('.', ',');
+        }
+
+        function parseValor(valor) {
+            return parseFloat(valor.replace(',', '.')) || 0;
+        }
+
+        function carregarDados() {
+            const data = $('#data').val();
+            
+            $.get(`/api/dados/${data}`)
+                .done(function(response) {
+                    if (response.status === 'success') {
+                        const dados = response.data;
+                        
+                        // Preenche os campos formatando com vírgula
+                        $('#gaveta_inicio').val(formatarMoeda(dados.gaveta_inicio));
+                        $('#gaveta_fim').val(formatarMoeda(dados.gaveta_fim));
+                        $('#valor_entrada').val(formatarMoeda(dados.valor_entrada));
+                        $('#cartao').val(formatarMoeda(dados.cartao));
+                        $('#retirada').val(formatarMoeda(dados.retirada));
+                        $('#vale').val(formatarMoeda(dados.vale));
+                        $('#entrada_produtos').val(formatarMoeda(dados.entrada_produtos));
+                        $('#pagamentos_gerais').val(formatarMoeda(dados.pagamentos_gerais));
+                        
+                        // Calcula a diferença inicial
+                        calcularDiferenca();
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('Erro ao carregar dados. Tente novamente.');
+                });
+        }
+
+        function calcularDiferenca() {
+            try {
+                // Soma dos valores do JSON (já convertidos pelo backend)
+                const campos_json = [
+                    'gaveta_inicio', 'gaveta_fim', 'valor_entrada', 'cartao',
+                    'retirada', 'vale', 'entrada_produtos', 'pagamentos_gerais'
+                ];
+                
+                let total_json = 0;
+                campos_json.forEach(campo => {
+                    const valor = parseValor($(`#${campo}`).val());
+                    total_json += valor;
+                });
+
+                // Soma dos valores do patrão (convertendo vírgula para ponto)
+                const maquinas = parseValor($('#maquinas').val());
+                const produtos = parseValor($('#produtos').val());
+                const total_patron = maquinas + produtos;
+
+                // Calcula a diferença (total_patron - total_json)
+                const diferenca = total_patron - total_json;
+
+                // Atualiza a exibição formatando com vírgula
+                $('#total_json').text('R$ ' + formatarMoeda(total_json));
+                $('#total_patron').text('R$ ' + formatarMoeda(total_patron));
+                
+                const diferencaElement = $('#diferenca');
+                // Mostra sinal negativo quando necessário
+                diferencaElement.text((diferenca < 0 ? '-' : '') + 'R$ ' + formatarMoeda(Math.abs(diferenca)));
+                
+                // Aplica estilo conforme o valor
+                diferencaElement.removeClass('positivo negativo');
+                if (diferenca > 0) {
+                    diferencaElement.addClass('positivo'); // Verde quando patrão > dia
+                } else if (diferenca < 0) {
+                    diferencaElement.addClass('negativo'); // Vermelho quando patrão < dia
+                }
+            } catch (e) {
+                console.error('Erro no cálculo:', e);
+            }
+        }
+    </script>
+</body>
+</html>

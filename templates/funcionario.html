@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Dados - Funcionário</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Cadastro Diário</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Novo Registro</h2>
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('patrao') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Página do Patrão
+                    </a>
+                    <!-- Botão direito vazio para manter o espaço -->
+                    <div></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('funcionario') }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data" class="form-label">Data:</label>
+                            <input type="date" class="form-control" id="data" name="data" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="gaveta_inicio" class="form-label">Gaveta Início (R$):</label>
+                            <input type="text" class="form-control" id="gaveta_inicio" name="gaveta_inicio" placeholder="100,50" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="gaveta_fim" class="form-label">Gaveta Fim (R$):</label>
+                            <input type="text" class="form-control" id="gaveta_fim" name="gaveta_fim" placeholder="200,75" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="valor_entrada" class="form-label">Valor Entrada (R$):</label>
+                            <input type="text" class="form-control" id="valor_entrada" name="valor_entrada" placeholder="50,00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cartao" class="form-label">Cartão (R$):</label>
+                            <input type="text" class="form-control" id="cartao" name="cartao" placeholder="300,25" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="retirada" class="form-label">Retirada (R$):</label>
+                            <input type="text" class="form-control" id="retirada" name="retirada" placeholder="0,00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="vale" class="form-label">Vale (R$):</label>
+                            <input type="text" class="form-control" id="vale" name="vale" placeholder="0,00" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="entrada_produtos" class="form-label">Entrada de Produtos (R$):</label>
+                            <input type="text" class="form-control" id="entrada_produtos" name="entrada_produtos" placeholder="150,50" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pagamentos_gerais" class="form-label">Pagamentos Gerais (R$):</label>
+                            <input type="text" class="form-control" id="pagamentos_gerais" name="pagamentos_gerais" placeholder="20,00" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Registros Anteriores</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Gaveta Início</th>
+                                <th>Gaveta Fim</th>
+                                <th>Valor Entrada</th>
+                                <th>Cartão</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registro in registros %}
+                            <tr>
+                                <td>{{ registro.data }}</td>
+                                <td>R$ {{ "%.2f"|format(registro.gaveta_inicio) }}</td>
+                                <td>R$ {{ "%.2f"|format(registro.gaveta_fim) }}</td>
+                                <td>R$ {{ "%.2f"|format(registro.valor_entrada) }}</td>
+                                <td>R$ {{ "%.2f"|format(registro.cartao) }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_registro', id=registro.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Formatação automática para vírgula decimal
+        $(document).ready(function() {
+            // Formata ao sair do campo (blur)
+            $('input[type="text"]').on('blur', function() {
+                let value = $(this).val();
+                if (value && !isNaN(parseFloat(value.replace(',', '.')))) {
+                    // Formata com vírgula e 2 decimais
+                    $(this).val(parseFloat(value.replace(',', '.')).toFixed(2).replace('.', ','));
+                }
+            });
+
+            // Remove formatação ao entrar no campo (focus)
+            $('input[type="text"]').on('focus', function() {
+                let value = $(this).val();
+                if (value.includes(',')) {
+                    $(this).val(value.replace(',', '.'));
+                }
+            });
+
+            // Converte para ponto antes do envio do formulário
+            $('form').on('submit', function() {
+                $('input[type="text"]').each(function() {
+                    let value = $(this).val();
+                    if (value.includes(',')) {
+                        $(this).val(value.replace(',', '.'));
+                    }
+                });
+                return true;
+            });
+        });
+    </script>
+</body>
+</html>
